@@ -154,7 +154,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             // 判断是否获取成功
             if(!isLock) {
                 // 获取失败，休眠并重试
-                Thread.sleep(200);
+                Thread.sleep(50);
                 return queryWithMutex(id);
             }
             shop = getById(id);
