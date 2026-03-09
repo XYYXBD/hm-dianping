@@ -17,8 +17,7 @@ import javax.annotation.Resource;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
+import static com.hmdp.utils.RedisConstants.*;
 
 /**
  * <p>
@@ -38,7 +37,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
      * 根据id查询商铺信息
      * 尝试从redis中查询商铺信息，如果存在直接返回
      * 如果不存在，根据id查询数据库
-     * 如果数据库中不存在，返回错误信息
+     * 如果数据库中不存在，缓存空对象并返回错误信息
      * 如果数据库中存在，写入redis并返回
      * @param id
      * @return
@@ -47,16 +46,21 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     public Result queryById(Long id) {
         // 尝试从redis中查询商铺信息，如果存在直接返回
         String shopCache = stringRedisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
-        // 判断是否存在
+        // 判断是否存在isNotBlank的优越性
         if(StrUtil.isNotBlank(shopCache)) {
             // 存在，直接返回
             Shop shop = JSONUtil.toBean(shopCache, Shop.class);
             return Result.ok(shop);
         }
+        if(shopCache != null) {
+            // 存在，但值为null，说明数据库中不存在，返回错误信息
+            return Result.fail("商铺不存在！");
+        }
         // 不存在，根据id查询数据库
         Shop shop = getById(id);
         // 如果数据库中不存在，返回错误信息
         if(shop == null) {
+            stringRedisTemplate.opsForValue().set(CACHE_SHOP_KEY + id, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
             return Result.fail("商铺不存在！");
         }
         // 如果数据库中存在，写入redis并返回
