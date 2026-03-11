@@ -14,7 +14,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IVoucherOrderService extends IService<VoucherOrder> {
 
-    Result seckill(Long seckillId);
+//    Result seckill(Long seckillId);
 
-    public Result createVoucherOrder(Long voucherId);
+//    Result createVoucherOrder(Long voucherId);
+
+    Result seckillVoucher(Long voucherId);
+
+    void createVoucherOrder(VoucherOrder voucherOrder);
 }
