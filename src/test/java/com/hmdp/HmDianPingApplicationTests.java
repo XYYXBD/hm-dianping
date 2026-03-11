@@ -5,6 +5,8 @@ import com.hmdp.service.impl.ShopServiceImpl;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
@@ -23,6 +25,8 @@ class HmDianPingApplicationTests {
     private ShopServiceImpl shopService;
     @Resource
     private RedisIdWorker redisIdWorker;
+    @Resource
+    private RedissonClient redissonClient;
 
     private ExecutorService executorService = Executors.newFixedThreadPool(500);
 
@@ -52,6 +56,25 @@ class HmDianPingApplicationTests {
         countDownLatch.await();
         Long end = System.currentTimeMillis();
         System.out.println("time = " + (end - begin));
+    }
+
+
+    @Test
+    void testRedisson() throws Exception {
+        //获取锁(可重入)，指定锁的名称
+        RLock lock = redissonClient.getLock("anyLock");
+        //尝试获取锁，参数分别是：获取锁的最大等待时间(期间会重试)，锁自动释放时间，时间单位
+        boolean isLock = lock.tryLock(1, 10, TimeUnit.SECONDS);
+        //判断获取锁成功
+        if (isLock) {
+            try {
+                System.out.println("执行业务");
+            } finally {
+                //释放锁
+                lock.unlock();
+            }
+
+        }
     }
 
 }
